@@ -1,0 +1,7 @@
+### Place information about your pack version here.
+---
+name: icinga2req
+description: Requests based Icinga2 Integration Pack for Stackstorm
+version: 2.0.0
+author: Todd Walk / Verizon Wireless VCP
+email: todd.walk@verizonwireless.com

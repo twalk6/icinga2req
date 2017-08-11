@@ -1,0 +1,25 @@
+---
+  eventstream_type:
+    description: "Either StateChange or CheckResult"
+    type: "string"
+    required: true
+  api_url:
+    description: "Base Icinga2 URL"
+    type: "string"
+    required: true
+  api_user:
+    description: "Icinga2 API User"
+    type: "string"
+    required: true
+  api_password:
+    description: "Icinga2 API Password"
+    type: "string"
+    required: true
+  cert_file:
+    description: "Path to (CA) Certificate file for Icinga2 API Access"
+    type: "string"
+    required: false
+  filter:
+    description: "Filter out unwanted events"
+    type: "object"
+    required: false

@@ -1,0 +1,7 @@
+# Place any required python libraries here. Will be installed into a pack specific virtualenv
+requests>=2.10.0
+requests[security]
+pyopenssl
+ndg-httpsclient
+pyasn1
+certifi
