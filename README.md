@@ -4,7 +4,6 @@ author: Todd Walk / Verizon Wireless VCP<br/>
 email: todd.walk@verizonwireless.com<br/>
 verison: 2.0
 
---------
 Copyright 2017 Verizon Wireless VCP
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,7 +17,6 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
---------
 
 NOTE: The older test/example remediation code in the actions and rules directories has been deleted because it was out of date and I didn't have the time to update it 
 
