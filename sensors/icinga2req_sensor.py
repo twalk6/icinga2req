@@ -22,8 +22,10 @@ class Icinga2ReqSensor(Sensor):
     self.buffer = ''
     self.eventstream_type = self._config['eventstream_type']
     self.url = self._config['api_url']
+    self.url_index = 0
     self.api_user = self._config['api_user']
     self.api_password = self._config['api_password']
+    self.api_queue = self._config['api_queue']
     self.cert = ''
     if 'cert_file' in self._config:
       self.cert = self._config['cert_file']
@@ -35,25 +37,33 @@ class Icinga2ReqSensor(Sensor):
     self.trigger_pack = 'icinga2req'
     self.trigger_ref = '.'.join([self.trigger_pack, self.trigger_name])
     self.logger.info('Icinga2ReqSensor initialized: %s', self._config)
-    
+
   def run(self):
     self.logger.info('Setting up Icinga2 API connection')
-    if self.eventstream_type == 'StateChange':
-      url = self.url + '/events?queue=icinga2req&types=StateChange&filter=event.state_type==1.0'
-    else:
-      url = self.url + '/events?queue=icinga2req&types=CheckResult&filter=event.check_result.vars_after.state_type==1.0'
-    self.logger.info('Icinga2ReqSensor url: %s', url)
-    if not self.cert:
-      self.logger.info('Icinga2ReqSensor: insecure')
-      #Turns off SSL validation (Required for python pre-2.7.9)
-      self.r = requests.post(url, auth=HTTPBasicAuth(self.api_user, self.api_password), stream=True, timeout=60,
-        verify=False, hooks=dict(response=self.on_receive), headers={'Accept': 'application/json'})
-    else:
-      self.logger.info('Icinga2ReqSensor: secure')
-      #We have a cert, much more secure
-      self.r = requests.post(url, auth=HTTPBasicAuth(self.api_user, self.api_password), stream=True, timeout=60,
-        verify=self.cert, hooks=dict(response=self.on_receive), headers={'Accept': 'application/json'})
-    self.logger.info('Icinga2ReqSensor status_code: %s', self.r.status_code)
+    while True: #Handling reconnection logic here...
+      try:
+        if self.eventstream_type == 'StateChange':
+          url = self.url[self.url_index] + '/events?queue=' + self.api_queue + '&types=StateChange&filter=event.state_type==1.0'
+        else:
+          url = self.url[self.url_index] + '/events?queue=' + self.api_queue + '&types=CheckResult&filter=event.check_result.vars_after.state_type==1.0'
+        self.logger.info('Icinga2ReqSensor url: %s', url)
+        if not self.cert:
+          self.logger.info('Icinga2ReqSensor: insecure')
+          #Turns off SSL validation (Required for python pre-2.7.9)
+          self.r = requests.post(url, auth=HTTPBasicAuth(self.api_user, self.api_password), stream=True, timeout=60,
+            verify=False, hooks=dict(response=self.on_receive), headers={'Accept': 'application/json'})
+        else:
+          self.logger.info('Icinga2ReqSensor: secure')
+          #We have a cert, much more secure
+          self.r = requests.post(url, auth=HTTPBasicAuth(self.api_user, self.api_password), stream=True, timeout=60,
+            verify=self.cert, hooks=dict(response=self.on_receive), headers={'Accept': 'application/json'})
+        self.logger.info('Icinga2ReqSensor status_code: %s', self.r.status_code)
+      except Exception as ex:
+        self.logger.info('Icinga2ReqSensor Exception %s', str(ex))
+      sleep(2)
+      self.url_index += 1
+      if self.url_index >= len(self.url):
+        self.url_index = 0
 
   def cleanup(self):
     if self.r:
@@ -105,13 +115,20 @@ class Icinga2ReqSensor(Sensor):
     payload['var']['ack'] = ack
 
     #Situationally specific in var
-    if 'stack' in var:
-      payload['var']['stack'] = var['stack']
-    if 'severity' in var:
-      payload['var']['severity'] = var['severity']
+    #if 'stack' in var:
+    #  payload['var']['stack'] = var['stack']
+    #if 'severity' in var:
+    #  payload['var']['severity'] = var['severity']
+    #hardware check (fix later with hardware custom icinga2 var)
+    if event['service'].lower().find("idrac") or event['service'].lower().find("ilo"):
+      payload['var']['hardware'] = True
+    #for key in var.keys():
+    #  if key.find("idrac") or key.find("ilo"):
+    #    payload['var'][key] = var[key]
+    #    payload['var']['hardware'] = True
     for key in var.keys():
-      if re.match("idrac", key) or re.match("ilo", key):
-        payload['var'][key] = var[key]
+      payload['var'][key] = var[key]
+      if key.lower().find("idrac") or key.lower().find("ilo"):
         payload['var']['hardware'] = True
 
     if self.sfilter(payload):
@@ -123,22 +140,30 @@ class Icinga2ReqSensor(Sensor):
   def get_extra_info(self,host,service):
     hostservice = host + "!" + service
     hostservice.replace(" ","%20")
-    url = self.url + '/objects/services?service=' + hostservice 
     #This join is the nasty thing that grabs all that extra event information, esp the custom vars. Modify it based on need
     data = '{ "joins": [ "host.name", "host.address", "host.address6", "host.vars" ], "attrs": [ "acknowledgement" ] }'
-    ok = False
     text = ""
-    ok, text = self.call_api(url,data)
-    if ok == False:
+    ack = False
+    j = {}
+    url_index = 0
+    while True:
+      url = self.url[url_index] + '/objects/services?service=' + hostservice
+      ok = False
+      ok, text = self.call_api(url,data)
+      if ok: break
       #ok, retry once more....
       sleep(5)
       ok, text = self.call_api(url,data)
-      if ok == False:
-        #ok, tried twice, treat this as a failure and return the default
+      if ok: break
+      #ok, tried twice, try the next url, else treat this as a failure and return the blank default
+      url_index += 1
+      if url_index >= len(self.url):
         return 0.0, "", "", {}
     #and.., we probably have a good return result..
-    j = json.loads(text)
-    ack = False
+    try:
+      j = json.loads(text)
+    except ValueError:
+      return 0.0, "", "", {}
     if j['results'][0]['attrs']['acknowledgement'] == 1.0:
       ack = True
     return ack, j['results'][0]['joins']['host']['address'], j['results'][0]['joins']['host']['address6'], j['results'][0]['joins']['host']['vars']

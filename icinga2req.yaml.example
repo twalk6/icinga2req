@@ -1,9 +1,10 @@
 ### Place configuration data for your pack here.
 ---
 eventstream_type: 'StateChange'  #StateChange or CheckResult
-api_url: 'https://localhost:5665/v1'
+api_url: [ 'https://localhost:5665/v1' ]
 api_user: 'root'
 api_password: 'b1191b942fa5ea97'
+api_queue: 'icinga2req'
 #comment out cert_file run without cert validation (less secure)
 cert_file: '/opt/stackstorm/packs/icinga2req/ca.crt'
 

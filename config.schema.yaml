@@ -5,7 +5,7 @@
     required: true
   api_url:
     description: "Base Icinga2 URL"
-    type: "string"
+    type: "array"
     required: true
   api_user:
     description: "Icinga2 API User"
@@ -15,6 +15,11 @@
     description: "Icinga2 API Password"
     type: "string"
     required: true
+  api_queue:
+    description: "Custom queue name for Icinga2 API access"
+    type: "string"
+    required: true
+    default: "icinga2req"
   cert_file:
     description: "Path to (CA) Certificate file for Icinga2 API Access"
     type: "string"
