@@ -22,6 +22,8 @@ limitations under the License.
 
 This is a python requests based Icinga2 integration pack that was modified, tested, and now working with StackStorm 2.x+. 
 
-Major cleanup with this version, supporting a new, "generic", trigger format, collecting extra information including addresses & custom check attributes, and a configurable filtering system.
+Version 2.0: Major cleanup with this version, supporting a new, "generic", trigger format, collecting extra information including addresses & custom check attributes, and a configurable filtering system.
 
-The filtering system works like this: For each block, the key is checked against everything in the payload. If there's a match made, then the type operation is done against the pattern. If it's a match, then that event is filtered out
+Version 2.1: Adds a configurable icinga2 queue setting. Hardens the code with reconnect support.
+
+The filtering system works like this: For each block, the key is checked against everything in the payload. If there's a match made, then the type operation is done against the pattern. If it's a match, then that event is filtered out.
