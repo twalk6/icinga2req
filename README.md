@@ -1,10 +1,10 @@
 # Requests based Icinga2 Integration Pack for Stackstorm
 
-author: Todd Walk / Verizon Wireless VCP<br/>
-email: todd.walk@verizonwireless.com<br/>
-verison: 2.1
+author: Todd Walk<br/>
+email: toddwalk6@hotmail.com<br/>
+verison: 2.1.1
 
-Copyright 2017 Verizon Wireless VCP
+Copyright 2017 Todd Walk
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
